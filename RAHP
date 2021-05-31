@@ -1,0 +1,305 @@
+Type Rough
+U As Double
+L As Double
+End Type
+Function Compr(a As Rough, b As Rough) As Rough
+
+If a.L > b.U Then
+c = b.L
+d = b.U
+ElseIf a.U < b.L Then
+c = a.L
+d = a.U
+End If
+
+If a.L < b.L And a.U < b.U Then
+c = a.L
+d = a.U
+
+ElseIf b.L < a.L And b.U < a.U Then
+c = b.L
+d = b.U
+
+End If
+
+
+If a.L < b.L And b.U < a.U And ((b.L - a.L) > (b.U - a.U)) Then
+c = a.L
+d = a.U
+ElseIf a.L < b.L And b.U < a.U And ((b.L - a.L) < (a.U - b.U)) Then
+c = b.L
+d = b.U
+ElseIf a.L > b.L And b.U > a.U And ((b.L - a.L) < (a.U - b.U)) Then
+c = b.L
+d = b.U
+ElseIf a.L > b.L And b.U > a.U And ((b.L - a.L) > (a.U - b.U)) Then
+c = a.L
+d = a.U
+End If
+
+
+
+
+
+Compr.L = c
+Compr.U = d
+
+End Function
+
+
+Sub RoughAHP()
+Dim x, z As Integer
+
+x = InputBox("Enter the number of criteria:")
+z = InputBox("Enter the number of experts:")
+
+
+Dim dizi() As String
+Dim dizi1() As String
+
+Dim karar() As Double
+ReDim karar(x, x, z) As Double
+
+Dim Rkarar() As Rough
+ReDim Rkarar(x, x, z) As Rough
+
+Dim RSkarar() As Rough
+ReDim RSkarar(x, x) As Rough
+
+
+Dim Total As Rough
+
+Dim SRS() As Rough
+ReDim SRS(x) As Rough
+
+
+Dim bnp() As Double
+ReDim bnp(x) As Double
+
+
+Dim We() As Rough
+ReDim We(x) As Rough
+
+
+
+
+
+
+
+
+
+
+For k = 1 To z
+For j = 1 To x
+
+    For i = 1 To x
+    
+        
+           
+        If Cells(i + (k - 1) * x, j) > 0 Then
+        
+
+                    
+        Cells(j + (k - 1) * x, i) = 1 / Cells(i + (k - 1) * x, j)
+                
+        End If
+       
+     
+            
+            
+    Next i
+
+Next j
+Next k
+
+
+For i = 1 To x * z
+
+    For j = 1 To x
+
+    If i Mod x = 0 Then
+    t = i / x
+    karar(x, j, t) = Cells(i, j)
+    Else
+    t = Int(i / x) + 1
+    karar(i Mod x, j, t) = Cells(i, j)
+    End If
+    
+   Next j
+    
+Next i
+
+
+For t = 1 To z
+For i = 1 To x
+For j = 1 To x
+
+Cells(i + x * (t - 1), j + x + 3) = Round(karar(i, j, t), 3)
+Next j
+Next i
+Next t
+
+
+
+
+
+For i = 1 To x
+    For j = 1 To x
+    
+        For t = 1 To z
+        up = 0
+        lo = 0
+        'up = 1
+        'lo = 1
+        sayu = 0
+        sayl = 0
+            For s = 1 To z
+                If karar(i, j, t) <= karar(i, j, s) Then
+                sayu = sayu + 1
+                up = up + karar(i, j, s)
+                'up = up * karar(i, j, s)
+                End If
+                If karar(i, j, t) >= karar(i, j, s) Then
+                sayl = sayl + 1
+                lo = lo + karar(i, j, s)
+                'lo = lo * karar(i, j, s)
+                End If
+              
+                Next s
+        Rkarar(i, j, t).L = lo / sayl
+        Rkarar(i, j, t).U = up / sayu
+        
+        'Rkarar(i, j, t).L = lo ^ (1 / sayl)
+        'Rkarar(i, j, t).U = up ^ (1 / sayu)
+        
+        Next t
+    
+    
+    
+    Next j
+Next i
+
+Cells(1, 2 * x + 6) = "Experts' opinions in rough numbers form"
+Cells(1, 3 * x + 8) = "Rough Decision Matrix"
+For i = 1 To x
+For j = 1 To x
+RSkarar(i, j).U = 1
+RSkarar(i, j).L = 1
+For t = 1 To z
+
+'Cells(i + 1 + x * (t - 1), j + 2 * x + 4) = "[" & CStr(Round(Rkarar(i, j, t).L, 3)) & ";" & CStr(Round(Rkarar(i, j, t).U, 3)) & "]"
+If t = 1 Then
+Cells(i + 1, j + 2 * x + 4) = "(" & "[" & CStr(Round(Rkarar(i, j, t).L, 2)) & ";" & CStr(Round(Rkarar(i, j, t).U, 2)) & "]" & ";"
+ElseIf t > 1 And t < z Then
+Cells(i + 1, j + 2 * x + 4) = Cells(i + 1, j + 2 * x + 4).Value & "[" & CStr(Round(Rkarar(i, j, t).L, 2)) & ";" & CStr(Round(Rkarar(i, j, t).U, 2)) & "]" & ";"
+ElseIf t = z Then
+Cells(i + 1, j + 2 * x + 4) = Cells(i + 1, j + 2 * x + 4).Value & "[" & CStr(Round(Rkarar(i, j, t).L, 2)) & ";" & CStr(Round(Rkarar(i, j, t).U, 2)) & "]" & ")"
+End If
+
+'RSkarar(i, j).U = RSkarar(i, j).U + Rkarar(i, j, t).U
+'RSkarar(i, j).L = RSkarar(i, j).L + Rkarar(i, j, t).L
+RSkarar(i, j).U = RSkarar(i, j).U * Rkarar(i, j, t).U
+RSkarar(i, j).L = RSkarar(i, j).L * Rkarar(i, j, t).L
+
+Next t
+'RSkarar(i, j).U = RSkarar(i, j).U / z
+'RSkarar(i, j).L = RSkarar(i, j).L / z
+RSkarar(i, j).U = (RSkarar(i, j).U) ^ (1 / z)
+RSkarar(i, j).L = (RSkarar(i, j).L) ^ (1 / z)
+
+Cells(i + 1, j + 3 * x + 6) = "[" & CStr(Round(RSkarar(i, j).L, 3)) & ";" & CStr(Round(RSkarar(i, j).U, 3)) & "]"
+
+Total.U = Total.U + RSkarar(i, j).U
+Total.L = Total.L + RSkarar(i, j).L
+
+SRS(i).U = SRS(i).U + RSkarar(i, j).U
+SRS(i).L = SRS(i).L + RSkarar(i, j).L
+
+Next j
+Next i
+Cells(1, 2 + 4 * x + 6) = "Total extent sum"
+Cells(2, 2 + 4 * x + 6) = "[" & CStr(Round(Total.L, 3)) & ";" & CStr(Round(Total.U, 3)) & "]"
+
+Top = 0
+say1 = -9999999999#
+Cells(1, 4 + 4 * x + 6) = "Extent sum"
+For i = 1 To x
+
+Cells(i + 1, 4 + 4 * x + 6) = "[" & CStr(Round(SRS(i).L, 3)) & ";" & CStr(Round(SRS(i).U, 3)) & "]"
+
+SRS(i).U = SRS(i).U / Total.L
+SRS(i).L = SRS(i).L / Total.U
+
+Cells(i + 1, 6 + 4 * x + 6) = "[" & CStr(Round(SRS(i).L, 3)) & ";" & CStr(Round(SRS(i).U, 3)) & "]"
+
+If SRS(i).U > say1 Then
+say1 = SRS(i).U
+End If
+
+Next i
+Cells(1, 6 + 4 * x + 6) = "Weights"
+
+For i = 1 To x
+
+We(i).L = SRS(i).L / say1
+We(i).U = SRS(i).U / say1
+
+Cells(i + 1, 6 + 7 * x + 6) = CStr(We(i).L) & ";" & CStr(We(i).U)
+Cells(i + 1, 9 + 4 * x + 6) = "[" & CStr(Round(We(i).L, 3)) & ";" & CStr(Round(We(i).U, 3)) & "]"
+Next i
+Cells(1, 9 + 4 * x + 6) = "Normalized weights"
+
+
+Dim yedek_1 As Rough
+Dim asıl As Rough
+Dim rank() As Integer
+ReDim rank(x) As Integer
+
+ 
+For i = 1 To x
+yedek_1.L = We(i).L
+yedek_1.U = We(i).U
+For j = 1 To x
+
+If i <> j And yedek_1.U > 0 And We(j).U > 0 Then
+
+
+
+If Compr(yedek_1, We(j)).U = We(i).U Then
+mini = i
+
+ElseIf Compr(yedek_1, We(j)).U = We(j).U Then
+mini = j
+yedek_1.L = We(j).L
+yedek_1.U = We(j).U
+End If
+
+End If
+
+
+
+
+Next j
+
+rank(i) = mini
+We(mini).L = 999999999
+We(mini).U = 9999999999#
+Cells(i + 1, 10 + 4 * x + 6) = "C" & i
+mini = 0
+Next i
+
+For i = 1 To x
+Cells(rank(i) + 1, 11 + 4 * x + 6) = i
+
+Next i
+
+Cells(1, 11 + 4 * x + 6) = "Rank"
+
+
+
+
+
+
+End Sub
+
+
